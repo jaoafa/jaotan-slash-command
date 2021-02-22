@@ -53,7 +53,7 @@ async def slash_command_potato(ctx: SlashContext):
         "required": False,
     }
 ])
-async def slash_command_socials(ctx: SlashContext, service: str, value: str):
+async def slash_command_socials(ctx: SlashContext, service: str, value: str = None):
     uuid = await get_uuid_from_discordId(ctx, ctx.author_id)
     if uuid is None:
         embed = discord.Embed(
