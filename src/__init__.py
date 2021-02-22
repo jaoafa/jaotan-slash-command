@@ -102,13 +102,13 @@ async def set_social_account(ctx: SlashContext, uuid: str, key: str, value: str)
                 "INSERT INTO socials (uuid, created_at) VALUES (%s, CURRENT_TIMESTAMP)",
                 (uuid,)
             )
-            cur.commit()
+            connection.commit()
 
         cur.execute(
             "UPDATE socials SET {} = %s WHERE uuid = %s".format(key),
             (value, uuid)
         )
-        cur.commit()
+        connection.commit()
     except DatabaseError as e:
         print(e)
         connection.close()
