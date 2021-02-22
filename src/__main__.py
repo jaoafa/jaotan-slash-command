@@ -144,6 +144,13 @@ async def slash_command_socials(ctx: SlashContext, service: str, value: str = No
                 return
 
             row = await get_social_accounts(cur, ctx, uuid)
+            if row is None:
+                embed = discord.Embed(
+                    title="Socials Status",
+                    description="設定がありません。",
+                    color=0x00ff00)
+                await ctx.send(embed=embed)
+
             embed = discord.Embed(
                 title="Socials Status",
                 description="Twitter: https://twitter.com/intent/user?user_id={}\n"
