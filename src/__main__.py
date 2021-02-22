@@ -146,11 +146,13 @@ async def slash_command_socials(ctx: SlashContext, service: str, value: str = No
             row = await get_social_accounts(cur, ctx, uuid)
             embed = discord.Embed(
                 title="Socials Status",
-                description="Twitter: https://twitter.com/intent/user?user_id={}\nGitHub: https://github.com/{}\nHomeUrl: {}".format(
-                    row["twitterId"],
-                    row["githubId"],
-                    row["homeUrl"]
-                ),
+                description="Twitter: https://twitter.com/intent/user?user_id={}\n"
+                            "GitHub: https://github.com/{}\n"
+                            "HomeUrl: {}".format(
+                                row["twitterId"],
+                                row["githubId"],
+                                row["homeUrl"]
+                            ),
                 color=0x00ff00)
             await ctx.send(embed=embed)
             return
