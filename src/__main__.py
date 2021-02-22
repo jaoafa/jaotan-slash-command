@@ -21,6 +21,50 @@ async def slash_command_potato(ctx: SlashContext):
     await ctx.send(content="(╮╯╭)")
 
 
+@slash_command.slash(name="socials", description="ソーシャルアカウントの登録状態を確認します。", guild_ids=[597378876556967936])
+async def slash_command_socials(ctx: SlashContext):
+    uuid = await get_uuid_from_discordId(ctx, ctx.author_id)
+    if uuid is None:
+        embed = discord.Embed(
+            title="Socials",
+            description="あなたはまだMinecraftアカウントとの連携がされていません。`/link`を実行して連携してください。",
+            color=0xfbff00)
+        await ctx.send(embed=embed)
+
+    connection = get_connection()
+    try:
+        cur = connection.cursor(dictionary=True, buffered=True)
+        if not connection.is_connected():
+            embed = discord.Embed(
+                title="Socials",
+                description="データベースへの接続に失敗しました。時間をおいてもう一度お試しください。",
+                color=0xff0000)
+            await ctx.send(embed=embed)
+            return
+
+        row = await get_social_accounts(cur, ctx, uuid)
+        embed = discord.Embed(
+            title="Socials Status",
+            description="Twitter: https://twitter.com/intent/user?user_id={}\n"
+                        "GitHub: https://github.com/{}\n"
+                        "HomeUrl: {}".format(
+                            row["twitterId"],
+                            row["githubId"],
+                            row["homeUrl"]
+                        ),
+            color=0x00ff00)
+        await ctx.send(embed=embed)
+        return
+    except DatabaseError as e:
+        print(e)
+        connection.close()
+        embed = discord.Embed(
+            title="Socials",
+            description="データベースの操作に失敗しました。時間をおいてもう一度お試しください。",
+            color=0xff0000)
+        await ctx.send(embed=embed)
+
+
 @slash_command.slash(name="socials", description="ソーシャルアカウントを登録します。", guild_ids=[597378876556967936], options=[
     {
         "type": SlashCommandOptionType.STRING,
@@ -39,10 +83,6 @@ async def slash_command_potato(ctx: SlashContext):
             {
                 "name": "Webサイト",
                 "value": "home"
-            },
-            {
-                "name": "現在の設定状態を確認",
-                "value": "status"
             }
         ]
     },
@@ -50,7 +90,7 @@ async def slash_command_potato(ctx: SlashContext):
         "type": SlashCommandOptionType.STRING,
         "name": "value",
         "description": "ソーシャルアカウントのユーザーID・サイトURL",
-        "required": False,
+        "required": True,
     }
 ])
 async def slash_command_socials(ctx: SlashContext, service: str, value: str = None):
@@ -131,40 +171,6 @@ async def slash_command_socials(ctx: SlashContext, service: str, value: str = No
             color=0x00ff00)
         await ctx.send(embed=embed)
         return
-    elif service == "status":
-        connection = get_connection()
-        try:
-            cur = connection.cursor(dictionary=True, buffered=True)
-            if not connection.is_connected():
-                embed = discord.Embed(
-                    title="Socials",
-                    description="データベースへの接続に失敗しました。時間をおいてもう一度お試しください。",
-                    color=0xff0000)
-                await ctx.send(embed=embed)
-                return
-
-            row = await get_social_accounts(cur, ctx, uuid)
-            embed = discord.Embed(
-                title="Socials Status",
-                description="Twitter: https://twitter.com/intent/user?user_id={}\n"
-                            "GitHub: https://github.com/{}\n"
-                            "HomeUrl: {}".format(
-                                row["twitterId"],
-                                row["githubId"],
-                                row["homeUrl"]
-                            ),
-                color=0x00ff00)
-            await ctx.send(embed=embed)
-            return
-        except DatabaseError as e:
-            print(e)
-            connection.close()
-            embed = discord.Embed(
-                title="Socials",
-                description="データベースの操作に失敗しました。時間をおいてもう一度お試しください。",
-                color=0xff0000)
-            await ctx.send(embed=embed)
-            return
 
     embed = discord.Embed(
         title="Socials",
