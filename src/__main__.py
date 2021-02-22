@@ -3,7 +3,7 @@ import discord
 from discord_slash import SlashCommand, SlashContext, SlashCommandOptionType
 from mysql.connector import DatabaseError
 
-from src import get_twitter_id, is_page_exists, set_social_account, get_uuid_from_discordId
+from src import get_twitter_id, is_page_exists, set_social_account, get_uuid_from_discordId, get_social_accounts
 from src.database import get_connection
 
 bot = discord.Client(intent=discord.Intents.all())
@@ -25,7 +25,7 @@ async def slash_command_potato(ctx: SlashContext):
     {
         "type": SlashCommandOptionType.STRING,
         "name": "service",
-        "description": "登録するソーシャルアカウントのサービス名",
+        "description": "登録するソーシャルアカウントのサービス名・ステータス",
         "required": True,
         "choices": [
             {
@@ -39,6 +39,10 @@ async def slash_command_potato(ctx: SlashContext):
             {
                 "name": "Webサイト",
                 "value": "home"
+            },
+            {
+                "name": "現在の設定状態を確認",
+                "value": "status"
             }
         ]
     },
@@ -46,7 +50,7 @@ async def slash_command_potato(ctx: SlashContext):
         "type": SlashCommandOptionType.STRING,
         "name": "value",
         "description": "ソーシャルアカウントのユーザーID・サイトURL",
-        "required": True,
+        "required": False,
     }
 ])
 async def slash_command_socials(ctx: SlashContext, service: str, value: str):
@@ -58,7 +62,7 @@ async def slash_command_socials(ctx: SlashContext, service: str, value: str):
             color=0xfbff00)
         await ctx.send(embed=embed)
 
-    if service == "twitter":
+    if service == "twitter" and value is not None:
         user_id = get_twitter_id(value)
         if user_id is None:
             embed = discord.Embed(
@@ -77,7 +81,7 @@ async def slash_command_socials(ctx: SlashContext, service: str, value: str):
         await ctx.send(embed=embed)
         return
 
-    elif service == "github":
+    elif service == "github" and value is not None:
         if "/" in value:
             embed = discord.Embed(
                 title="Socials",
@@ -103,7 +107,7 @@ async def slash_command_socials(ctx: SlashContext, service: str, value: str):
         await ctx.send(embed=embed)
         return
 
-    elif service == "home":
+    elif service == "home" and value is not None:
         if not value.startswith("http://") and not value.startswith("https://"):
             embed = discord.Embed(
                 title="Socials",
@@ -127,10 +131,42 @@ async def slash_command_socials(ctx: SlashContext, service: str, value: str):
             color=0x00ff00)
         await ctx.send(embed=embed)
         return
+    elif service == "status":
+        connection = get_connection()
+        try:
+            cur = connection.cursor(dictionary=True, buffered=True)
+            if not connection.is_connected():
+                embed = discord.Embed(
+                    title="Socials",
+                    description="データベースへの接続に失敗しました。時間をおいてもう一度お試しください。",
+                    color=0xff0000)
+                await ctx.send(embed=embed)
+                return
+
+            row = await get_social_accounts(cur, ctx, uuid)
+            embed = discord.Embed(
+                title="Socials Status",
+                description="Twitter: {}\nGitHub: {}\nHomeUrl: {}".format(
+                    row["twitterId"],
+                    row["githubId"],
+                    row["homeUrl"]
+                ),
+                color=0x00ff00)
+            await ctx.send(embed=embed)
+            return
+        except DatabaseError as e:
+            print(e)
+            connection.close()
+            embed = discord.Embed(
+                title="Socials",
+                description="データベースの操作に失敗しました。時間をおいてもう一度お試しください。",
+                color=0xff0000)
+            await ctx.send(embed=embed)
+            return
 
     embed = discord.Embed(
         title="Socials",
-        description="何らかの問題が発生しています。",
+        description="`Twitter` ・ `GitHub` ・ `Webサイト` のパラメータは `ソーシャルアカウントのユーザーID・サイトURL` が必要です。",
         color=0xff0000)
     await ctx.send(embed=embed)
 
