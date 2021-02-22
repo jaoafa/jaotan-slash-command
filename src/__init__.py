@@ -104,8 +104,8 @@ async def set_social_account(ctx: SlashContext, uuid: str, key: str, value: str)
             )
 
         cur.execute(
-            "UPDATE socials SET %s = %s WHERE uuid = %s",
-            (key, value, uuid)
+            "UPDATE socials SET " + key + " = %s WHERE uuid = %s",
+            (value, uuid)
         )
     except DatabaseError as e:
         print(e)
